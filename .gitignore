@@ -1,7 +1,8 @@
 
-cloud-init/user-data 
 
 cloud-init/network-config
+
+cloud-init/user-data
 
 .idea/
 
