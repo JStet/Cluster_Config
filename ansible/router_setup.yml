@@ -1,0 +1,15 @@
+---
+#requires the server to already have a user set up with passwordless sudo etc. Done that with cloud init.
+- hosts: routers
+  gather_facts: no
+  vars_files:
+    - vars/vault.yml
+    - vars/main.yml
+
+  tasks:
+    - name: SSH juggle
+      import_tasks: tasks/ssh-juggle.yml
+    - name: Initial Setup
+      become: yes
+      import_tasks: tasks/initial_setup.yml
+

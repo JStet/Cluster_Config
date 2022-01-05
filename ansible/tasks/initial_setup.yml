@@ -1,0 +1,67 @@
+---
+# SSH hardening
+- name: Disable SSH root login
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#PermitRootLogin'
+    line: 'PermitRootLogin no'
+
+- name: Disable SSH password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#PasswordAuthentication yes'
+    line: 'PasswordAuthentication no'
+
+- name: Setup alternate SSHd port
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: '^#Port'
+    line: 'Port 4242'
+
+
+#Disabling cloud init for it has done its work
+- name: Ubuntu specific tasks
+  become: yes
+  block:
+  - name: Remove cloud-config to avoid boot delay
+    apt:
+      name: cloud-config
+      state: absent
+
+# Standard stuff
+- name: Generate the locale
+  locale_gen:
+    name: "en_US.UTF-8"
+    state: present
+
+- name: Update and upgrade apt packages
+  shell:
+    cmd: apt update && apt upgrade -y
+
+# Fail2ban
+- name: Install fail2ban (Debian).
+  package:
+    name: fail2ban
+    state: present
+
+- name: Ensure fail2ban is running and enabled on boot.
+  service:
+    name: fail2ban
+    state: started
+    enabled: true
+
+# Automatic updates
+
+
+# reboot
+- name: Check if reboot required
+  stat:
+    path: /var/run/reboot-required
+  register: reboot_required_file
+
+- name: Reboot if required
+  reboot:
+    msg: Rebooting due to a kernel update
+
+
+
