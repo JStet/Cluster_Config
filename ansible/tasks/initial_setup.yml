@@ -54,14 +54,17 @@
 
 
 # reboot
-- name: Check if reboot required
-  stat:
-    path: /var/run/reboot-required
-  register: reboot_required_file
+#- name: Check if reboot required
+#  stat:
+#    path: /var/run/reboot-required
+#  register: reboot_required_file
 
-- name: Reboot if required
-  reboot:
-    msg: Rebooting due to a kernel update
+#- name: Reboot if required
+#  reboot:
+#    msg: Rebooting due to a kernel update
 
-
+- name: Install extra packages
+  package:
+    name: "{{ extra_packages }}"
+    state: present
 

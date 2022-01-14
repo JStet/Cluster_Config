@@ -1,0 +1,6 @@
+[Match]
+MACAddress=e4:5f:01:76:21:9e
+
+[Link]
+Description=Built-in LAN of raspberry
+Name=extern0

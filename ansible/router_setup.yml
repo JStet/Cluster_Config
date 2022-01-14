@@ -1,15 +1,98 @@
 ---
-#requires the server to already have a user set up with passwordless sudo etc. Done that with cloud init.
+#requires the server to already have a user set up with passwordless sudo etc. Did that with cloud init. Connecting to the server via WLAN and hotspot I opened with my phone.
 - hosts: routers
   gather_facts: no
+  become: yes
   vars_files:
-    - vars/vault.yml
-    - vars/main.yml
+    - group_vars/vault.yml
+    - group_vars/main.yml
 
   tasks:
-    - name: SSH juggle
-      import_tasks: tasks/ssh-juggle.yml
-    - name: Initial Setup
-      become: yes
-      import_tasks: tasks/initial_setup.yml
+    #- name: SSH juggle
+    #  import_tasks: tasks/ssh-juggle.yml
+    #- name: Initial Setup
+    #  import_tasks: tasks/initial_setup.yml
+    - name: Install extra packages for router
+      package:
+        name: "{{ extra_packages_router }}"
+        state: present
+
+    - name: Renaming internal interface with a .link file (copying it to host)
+      ansible.builtin.template:
+        src: templates/10-intern0.link
+        dest: /etc/systemd/network/10-intern0.link
+
+    - name: Renaming external interface with a .link file (copying it to host)
+      ansible.builtin.template:
+        src: templates/10-extern0.link
+        dest: /etc/systemd/network/10-extern0.link
+
+    - name: Configuring internal interface by using netctl profiles (copying template to host)
+      ansible.builtin.template:
+        src: templates/intern0-profile
+        dest: /etc/netctl/intern0-profile
+
+    - name: Configuring external interface by using netctl profiles (copying template to host)
+      ansible.builtin.template:
+        src: templates/extern0-profile
+        dest: /etc/netctl/extern0-profile
+
+    - name: Enable the previously created network configs
+      shell: |
+       netctl enable extern0-profile
+       netctl enable intern0-profile
+
+    - name: Configuring dnsmasq as DNS Server and DHCP daemon (copying template to host)
+      ansible.builtin.template:
+        src: templates/dnsmasq.conf
+        dest: /etc/dnsmasq.conf
+
+    - name: unblock port 53 (blocked by systemd-resolve) for dnsmasq, causes error otherwise
+      ansible.builtin.systemd:
+        name: systemd-resolved
+        state: stopped
+        enabled: false
+
+    - name: make sure dnsmasq.leases has correct permissions (caused an error strangely)
+      ansible.builtin.file:
+        path: /var/lib/misc/dnsmasq.leases
+        mode: 'a+rw'
+
+    - name: Ensure dnsmasq is running and enabled on boot.
+      service:
+        name: dnsmasq
+        state: started
+        enabled: true
+
+    - name: Enable package forwarding (by modifying a systctl config file)
+      ansible.builtin.template:
+        src: templates/30-ipforward.conf
+        dest: /etc/sysctl.d/30-ipforward.conf
+
+    - name: Ensure iptables is running and enabled on boot.
+      service:
+        name: iptables
+        state: started
+        enabled: true
+
+    - name: Enabling NAT with iptables
+      shell: |
+        iptables -F
+        iptables -t nat -A POSTROUTING -o extern0 -j MASQUERADE
+        iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+        iptables -A FORWARD -i intern0 -o extern0 -j ACCEPT
+        iptables-save > /etc/iptables/rules.v4
+
+    - name: Reboot host and wait for it to restart
+      reboot:
+        msg: "Reboot initiated by Ansible"
+        connect_timeout: 5
+        reboot_timeout: 600
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: whoami
+
+
+
+
 

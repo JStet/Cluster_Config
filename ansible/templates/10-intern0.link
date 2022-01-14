@@ -1,0 +1,6 @@
+[Match]
+MACAddress=d0:37:45:c3:2f:98
+
+[Link]
+Description=USB to Ethernet Adapter
+Name=intern0

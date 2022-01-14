@@ -1,0 +1,15 @@
+---
+#
+# Packages
+#
+extra_packages:
+  - net-tools
+  - netctl
+
+extra_packages_router:
+  - dnsmasq
+  - iptables
+  - iptables-persistent #necessary for ubuntu
+
+
+
