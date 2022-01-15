@@ -6,4 +6,4 @@ cloud-init/router/user-data
 
 hosts
 
-group_vars/vault.yml
+vault.yml
