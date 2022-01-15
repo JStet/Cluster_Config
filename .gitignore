@@ -1,7 +1,9 @@
-cloud-init/network-config
+cloud-init/router/network-config
 
-cloud-init/user-data
+cloud-init/router/user-data
 
 .idea/
 
 hosts
+
+group_vars/vault.yml

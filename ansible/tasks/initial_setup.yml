@@ -1,4 +1,34 @@
 ---
+
+#making sure ssh key exists on host
+- name: Set authorized key taken from file
+  ansible.posix.authorized_key:
+    user: "{{ ansible_user}}"
+    state: present
+    key: "{{ lookup('file', '{{ ansible_ssh_public_key_path }}') }}"
+
+# Passwordless sudo
+
+- name: Make sure we have a 'wheel' group
+  group:
+    name: wheel
+    state: present
+
+- name: Allow 'wheel' group to have passwordless sudo
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: "^%wheel"
+    line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+    validate: "visudo -cf %s"
+
+- name: Add sudoers users to wheel group
+  user:
+    name="{{ ansible_user }}"
+    groups=wheel
+    state=present
+
+
 # SSH hardening
 - name: Disable SSH root login
   lineinfile:
@@ -27,6 +57,7 @@
     apt:
       name: cloud-config
       state: absent
+  when: ansible_distribution == 'Ubuntu'
 
 # Standard stuff
 - name: Generate the locale
@@ -39,7 +70,7 @@
     cmd: apt update && apt upgrade -y
 
 # Fail2ban
-- name: Install fail2ban (Debian).
+- name: Install fail2ban
   package:
     name: fail2ban
     state: present
@@ -52,16 +83,6 @@
 
 # Automatic updates
 
-
-# reboot
-#- name: Check if reboot required
-#  stat:
-#    path: /var/run/reboot-required
-#  register: reboot_required_file
-
-#- name: Reboot if required
-#  reboot:
-#    msg: Rebooting due to a kernel update
 
 - name: Install extra packages
   package:

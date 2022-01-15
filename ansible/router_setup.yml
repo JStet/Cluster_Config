@@ -8,10 +8,12 @@
     - group_vars/main.yml
 
   tasks:
-    #- name: SSH juggle
-    #  import_tasks: tasks/ssh-juggle.yml
-    #- name: Initial Setup
-    #  import_tasks: tasks/initial_setup.yml
+    - name: SSH juggle
+      import_tasks: tasks/ssh-juggle.yml
+    - name: Gathering facts
+      setup:
+    - name: Initial Setup
+      import_tasks: tasks/initial_setup.yml
     - name: Install extra packages for router
       package:
         name: "{{ extra_packages_router }}"
