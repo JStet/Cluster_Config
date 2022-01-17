@@ -1,6 +1,7 @@
 cloud-init/router/network-config
 
-cloud-init/router/user-data
+user-data
+network-config
 
 .idea/
 

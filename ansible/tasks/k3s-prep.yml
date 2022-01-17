@@ -1,0 +1,19 @@
+---
+
+### prepare install
+- name: copy cmdline.txt to host
+  become: yes
+  ansible.builtin.template:
+    src: "cmdline.txt"
+    dest: "/boot/firmware/cmdline.txt"
+
+- name: disabling swap #can be necessary for kubernetes
+  become: yes
+  ansible.builtin.command: swapoff -a
+
+
+
+
+
+
+

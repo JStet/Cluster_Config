@@ -1,0 +1,71 @@
+---
+#requires the server to already have a user set up. I used FAI (https://fai-project.org/) for an automatic installation.
+- hosts: raspi-master, raspi1
+  gather_facts: no #facts will be gathered later after ssh juggle
+  become: yes # not sure about this
+  vars_files:
+    - group_vars/vault.yml
+    - group_vars/main.yml
+
+  tasks:
+    - name: docker install
+      import_tasks: tasks/docker-install.yml
+    - name: k3s prep
+      import_tasks: tasks/k3s-prep.yml
+    - name: Reboot the server and wait for it to come back up.
+      become: yes
+      reboot:
+
+
+    - name: install k3s on master
+      block:
+        - name: execute install script
+          shell: curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" sh -s - --docker
+          register: command_result
+          failed_when: "'FAILED' in command_result.stderr"
+
+        - name: get token
+          become: yes
+          ansible.builtin.command: cat /var/lib/rancher/k3s/server/node-token
+          register: command_output
+
+      when: inventory_hostname in groups['pimasters']
+
+    - set_fact:
+            token: "{{ hostvars[groups['pimasters'][0]]['command_output']['stdout'] }}" #var exists only on one host so far
+
+    - name: install k3s on workers
+      block:
+        - name: install k3s on workers and add nodes
+          shell: curl -sfL http://get.k3s.io | K3S_URL=https://10.0.0.6:6443 K3S_TOKEN={{  token  }} K3S_NODE_NAME={{ item }} sh -s - --docker
+          register: command_result
+          failed_when: "'FAILED' in command_result.stderr"
+          with_items: #groups['piworkers']
+            - raspi1
+      when: inventory_hostname in groups['piworkers']
+
+    - name: strange swap stuff
+      when: inventory_hostname in groups['pimasters']
+      command: strace -eopenat kubectl version
+
+    - name: Pause for 30 sec
+      pause:
+        seconds: 30
+
+    - name: print to stdout
+      when: inventory_hostname in groups['pimasters']
+      command: kubectl get nodes
+      register: output
+
+    - debug: msg="{{ output.stdout_lines }}"
+      when: inventory_hostname in groups['pimasters']
+
+
+
+
+
+
+
+
+
+

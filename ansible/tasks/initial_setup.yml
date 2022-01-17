@@ -8,7 +8,6 @@
     key: "{{ lookup('file', '{{ ansible_ssh_public_key_path }}') }}"
 
 # Passwordless sudo
-
 - name: Make sure we have a 'wheel' group
   group:
     name: wheel
@@ -51,7 +50,6 @@
 
 #Disabling cloud init for it has done its work
 - name: Ubuntu specific tasks
-  become: yes
   block:
   - name: Remove cloud-config to avoid boot delay
     apt:
@@ -82,10 +80,69 @@
     enabled: true
 
 # Automatic updates
+- name: Install unattended upgrades package.
+  package:
+    name: unattended-upgrades
+    state: present
 
+- name: Copy unattended-upgrades configuration files in place.
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/apt/apt.conf.d/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - 10periodic
+    - 50unattended-upgrades
 
+#remove ubuntu user
+- name: Remove Users
+  user:
+    name: ubuntu
+    state: absent
+    remove: yes
+
+#Extra packages
 - name: Install extra packages
   package:
     name: "{{ extra_packages }}"
     state: present
+
+#yeet snap
+- name: "Check if snap is installed"
+  package_facts:
+    manager: "auto"
+
+- name: Remove snap functionality
+  when: "'snapd' in ansible_facts.packages"
+  block:
+  - name: Unmount the core* snaps
+    mount:
+      name: "/snap/core*"
+      state: unmounted
+
+- name: Remove the pre-installed snaps
+  snap:
+    name: "*"
+    state: absent
+  ignore_errors: yes
+
+- name: Remove the snap package from apt
+  apt:
+    package: snapd
+    state: absent
+    purge: yes
+
+- name: Remove the snap folders
+  file:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - /home/{{ ansible_user}}/snap
+    - /var/snap
+    - /var/lib/snap
+  ignore_errors: yes
+
+
 
