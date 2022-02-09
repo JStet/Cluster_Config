@@ -1,0 +1,15 @@
+- hosts: pimasters, piworkers, oldpcs
+  gather_facts: no #facts will be gathered later after ssh juggle
+  become: yes # not sure about this
+  vars_files:
+    - group_vars/vault.yml
+    - group_vars/main.yml
+
+  tasks:
+    - name: SSH juggle
+      import_tasks: tasks/ssh-juggle.yml
+    - name: shutdown
+      become: yes
+      command: shutdown now
+      ignore_errors: yes
+

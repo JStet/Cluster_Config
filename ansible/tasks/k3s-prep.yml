@@ -11,6 +11,18 @@
   become: yes
   ansible.builtin.command: swapoff -a
 
+- name: Setting environment variables #https://docs.ansible.com/ansible/latest/collections/ansible/builtin/template_module.html
+      become: yes
+      ansible.builtin.template:
+        src: templates/envvars.j2
+        dest: /etc/profile.d/envvars.sh
+
+- name: make docker images work on raspi hopefully
+  lineinfile:
+   path: /etc/profile.d/envvars.sh
+   line: export DOCKER_DEFAULT_PLATFORM=linux/arm64
+  when: inventory_hostname in groups['pimasters'] or inventory_hostname in groups['piworkers']
+
 
 
 

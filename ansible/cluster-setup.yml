@@ -16,7 +16,7 @@
       become: yes
       reboot:
 
-
+#################### Installing Kubernetes #######################
     - name: install k3s on master
       block:
         - name: execute install script
@@ -48,9 +48,11 @@
       when: inventory_hostname in groups['pimasters']
       command: strace -eopenat kubectl version
 
+## confirm installation success
+
     - name: Pause for 30 sec
       pause:
-        seconds: 30
+        seconds: 15
 
     - name: print to stdout
       when: inventory_hostname in groups['pimasters']
@@ -58,6 +60,30 @@
       register: output
 
     - debug: msg="{{ output.stdout_lines }}"
+      when: inventory_hostname in groups['pimasters']
+
+####################################################################################
+
+    - name: installing spark with helm
+      block:
+         - name: add key and repo for helm
+           shell: |
+             curl https://baltocdn.com/helm/signing.asc | apt-key add -
+             apt-get install apt-transport-https --yes
+             echo "deb https://baltocdn.com/helm/stable/debian/ all main" | tee /etc/apt/sources.list.d/helm-stable-debian.list
+
+         - name: install helm
+           apt:
+              name: helm
+              state: present
+              update_cache: yes
+
+         - name: add helm repo for spark
+           command: helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator
+
+         - name: installing spark operator
+           command:
+
       when: inventory_hostname in groups['pimasters']
 
 

@@ -1,0 +1,40 @@
+---
+#yeet snap
+- name: "Check if snap is installed"
+  package_facts:
+    manager: "auto"
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Remove snap functionality
+  when: "'snapd' in ansible_facts.packages"
+  block:
+  - name: Unmount the core* snaps
+    mount:
+      name: "/snap/core*"
+      state: unmounted
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Remove the pre-installed snaps
+  snap:
+    name: "*"
+    state: absent
+  ignore_errors: yes
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Remove the snap package from apt
+  apt:
+    package: snapd
+    state: absent
+    purge: yes
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Remove the snap folders
+  file:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - /home/{{ ansible_user}}/snap
+    - /var/snap
+    - /var/lib/snap
+  ignore_errors: yes
+  when: ansible_distribution == 'Ubuntu'

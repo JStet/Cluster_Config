@@ -1,13 +1,6 @@
 ---
 
-#making sure ssh key exists on host
-- name: Set authorized key taken from file
-  ansible.posix.authorized_key:
-    user: "{{ ansible_user}}"
-    state: present
-    key: "{{ lookup('file', '{{ ansible_ssh_public_key_path }}') }}"
-
-# Passwordless sudo
+################ Sudo stuff ###############
 - name: Make sure we have a 'wheel' group
   group:
     name: wheel
@@ -27,8 +20,15 @@
     groups=wheel
     state=present
 
+###########################################################
 
-# SSH hardening
+####################### SSH hardening #####################
+#making sure ssh key exists on host
+- name: Deploy SSH Key
+  authorized_key: user=user
+                 key="{{ lookup('file', '.ssh/cluster.key.pub') }}"
+                 state=present
+
 - name: Disable SSH root login
   lineinfile:
     path: /etc/ssh/sshd_config
@@ -41,12 +41,7 @@
     regexp: '^#PasswordAuthentication yes'
     line: 'PasswordAuthentication no'
 
-- name: Setup alternate SSHd port
-  lineinfile:
-    dest: /etc/ssh/sshd_config
-    regexp: '^#Port'
-    line: 'Port 4242'
-
+###########################################################
 
 #Disabling cloud init for it has done its work
 - name: Ubuntu specific tasks
@@ -67,19 +62,7 @@
   shell:
     cmd: apt update && apt upgrade -y
 
-# Fail2ban
-- name: Install fail2ban
-  package:
-    name: fail2ban
-    state: present
-
-- name: Ensure fail2ban is running and enabled on boot.
-  service:
-    name: fail2ban
-    state: started
-    enabled: true
-
-# Automatic updates
+######Automatic Upgrades#######################
 - name: Install unattended upgrades package.
   package:
     name: unattended-upgrades
@@ -87,7 +70,7 @@
 
 - name: Copy unattended-upgrades configuration files in place.
   template:
-    src: "{{ item }}.j2"
+    src: "templates/unattended-upgrades/{{ item }}.j2"
     dest: "/etc/apt/apt.conf.d/{{ item }}"
     owner: root
     group: root
@@ -95,6 +78,7 @@
   with_items:
     - 10periodic
     - 50unattended-upgrades
+################################################
 
 #remove ubuntu user
 - name: Remove Users
@@ -102,6 +86,7 @@
     name: ubuntu
     state: absent
     remove: yes
+  when: ansible_distribution == 'Ubuntu'
 
 #Extra packages
 - name: Install extra packages
@@ -110,39 +95,15 @@
     state: present
 
 #yeet snap
-- name: "Check if snap is installed"
-  package_facts:
-    manager: "auto"
+- name: remove snap stuff
+  import_tasks: remove_snap.yml
 
-- name: Remove snap functionality
-  when: "'snapd' in ansible_facts.packages"
-  block:
-  - name: Unmount the core* snaps
-    mount:
-      name: "/snap/core*"
-      state: unmounted
-
-- name: Remove the pre-installed snaps
-  snap:
-    name: "*"
-    state: absent
-  ignore_errors: yes
-
-- name: Remove the snap package from apt
-  apt:
-    package: snapd
-    state: absent
-    purge: yes
-
-- name: Remove the snap folders
-  file:
-    name: "{{ item }}"
-    state: absent
-  with_items:
-    - /home/{{ ansible_user}}/snap
-    - /var/snap
-    - /var/lib/snap
-  ignore_errors: yes
+###################
+#Didnt set hostname with FAI on old pc
+- name: Set a hostname
+  ansible.builtin.hostname:
+    name: old-pc
+  when: inventory_hostname in groups['oldpcs']
 
 
 

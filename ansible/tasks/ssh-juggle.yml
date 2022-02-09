@@ -7,28 +7,12 @@
   register: _ssh_port_result
 
 
-## Change ssh port to default
-- name: SSH Port Juggle | Set the ansible_port to the fallback default port
-  set_fact:
-    ansible_ssh_port: "22"
-  when:
-    - _ssh_port_result is failed
-
-- name: SSH Port Juggle | Try connecting again
-  wait_for_connection:
-    timeout: 5
-  ignore_errors: true
-  register: _ssh_port_default_result
-  when:
-    - _ssh_port_result is failed
-
-
 ## Use password
 - name: SSH Port Juggle | Set password
   set_fact:
     ansible_password: "{{ vault_user_pw  }}"
   when:
-    - _ssh_port_default_result is failed
+    - _ssh_port_result is failed
 
 - name: SSH Port Juggle | Try connecting again
   wait_for_connection:
@@ -36,7 +20,7 @@
   ignore_errors: true
   register: _ssh_port_password_result
   when:
-    - _ssh_port_default_result is failed
+    - _ssh_port__result is failed
 
 
 ## Display mesage when everything has failed
@@ -44,7 +28,5 @@
   fail: msg="Neither the configured ansible_port {{ ansible_port }} nor the fallback port 22 were reachable"
   when:
     - _ssh_port_result is failed
-    - _ssh_port_default_result is defined
-    - _ssh_port_default_result is failed
     - _ssh_port_password_result is defined
     - _ssh_port_password_result is failed

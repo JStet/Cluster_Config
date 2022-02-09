@@ -1,10 +1,11 @@
-cloud-init/router/network-config
-
 user-data
 network-config
 
 .idea/
 
-hosts
-
 vault.yml
+
+.ssh/
+
+cluster.key
+cluster.key.pub

@@ -1,8 +1,8 @@
 ---
-#requires the server to already have a user set up. I used FAI (https://fai-project.org/) for an automatic installation.
-- hosts: raspi1, raspi-master
+#requires the server to already have a user set up. I used cloudinit on the raspberry pis and FAI (https://fai-project.org/) for an automatic installation on the old pc.
+- hosts: old-pcs, pimasters, piworkers
   gather_facts: no #facts will be gathered later after ssh juggle
-  become: yes #sudo required for everything
+  become: yes
   vars_files:
     - group_vars/vault.yml
     - group_vars/main.yml

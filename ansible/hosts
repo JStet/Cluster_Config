@@ -1,0 +1,24 @@
+[pimasters]
+raspi1 ansible_host=10.0.0.3
+
+[routers]
+router ansible_host=10.0.0.1
+
+
+[piworkers]
+raspi2 ansible_host=10.0.0.4
+raspi3 ansible_host=10.0.0.5
+raspi4 ansible_host=10.0.0.6
+
+[oldpcs]
+old-pc ansible_host=10.0.0.2
+
+[workers:children]
+oldpcs
+piworkers
+
+[all:vars]
+ansible_port=22
+ansible_ssh_private_key_file=.ssh/cluster.key
+ansible_ssh_public_key_path=.ssh/cluster.key.pub
+ansible_user=user

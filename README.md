@@ -8,4 +8,7 @@ Stuff I use to configure my small home cluster.
  - https://github.com/notthebee/infra
  - https://github.com/geerlingguy/ansible-role-security
  - https://wiki.archlinux.org/title/router
- - 
+ - https://www.youtube.com/watch?v=V1SkEl1r4Pg (its tricky to get a spark docker image that works on ARM, had to modify the default Dockerfile)
+
+
+
