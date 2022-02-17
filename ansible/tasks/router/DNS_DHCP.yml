@@ -1,0 +1,27 @@
+- name: adding hosts to host file
+  template:
+    src: templates/hosts
+    dest: /etc/hosts
+
+- name: Configuring dnsmasq as DNS Server and DHCP daemon (copying template to host)
+  template:
+    src: templates/dnsmasq.conf
+    dest: /etc/dnsmasq.conf
+
+- name: unblock port 53 (blocked by systemd-resolve) for dnsmasq, causes error otherwise
+  systemd:
+    name: systemd-resolved
+    state: stopped
+    enabled: false
+
+- name: Ensure dnsmasq is running (also restart it) and enabled on boot.
+  service:
+    name: dnsmasq
+    state: restarted
+    enabled: yes
+
+- name: Ensure systemdresolve is disabled
+  service:
+    name: systemd-resolved
+    state: stopped
+    enabled: no

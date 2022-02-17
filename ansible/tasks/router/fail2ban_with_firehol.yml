@@ -1,0 +1,31 @@
+- name: modify fail2ban to work with firehol (step 1b --> modify jail.local)
+  template:
+    dest: /etc/fail2ban/jail.local
+    src: templates/fail2ban/jail.local
+
+- name: modify fail2ban to work with firehol (step 2 --> Create fail2ban.service.d directory)
+  file:
+    path: /etc/systemd/system/fail2ban.service.d/
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: modify fail2ban to work with firehol (step 2b --> binding fail2ban to firehol)
+  template:
+    dest: /etc/systemd/system/fail2ban.service.d/override.conf
+    src: templates/fail2ban/override.conf
+
+- name: modify fail2ban to work with firehol (step 3 --> iptable -w switch should be used)
+  lineinfile:
+    dest: /etc/firehol/firehol-defaults.conf
+    line: IPTABLES_CMD="/sbin/iptables -w"
+
+- name: restart systemctl daemon
+  command: systemctl daemon-reload
+
+- name: Ensure fail2ban is running
+  service:
+    name: fail2ban
+    state: started
+    enabled: yes

@@ -2,9 +2,11 @@
 #
 # Packages
 #
-extra_packages:
+packages:
   - net-tools
   - netctl
+  - unattended-upgrades
+  - fail2ban
 
 
 extra_packages_router:

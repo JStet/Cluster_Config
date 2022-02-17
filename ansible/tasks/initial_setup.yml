@@ -1,5 +1,4 @@
 ---
-
 ################ Sudo stuff ###############
 - name: Make sure we have a 'wheel' group
   group:
@@ -43,31 +42,43 @@
 
 ###########################################################
 
+- name: Disabling root login completely
+  lineinfile:
+    path: /etc/passwd
+    regexp: "root:x:0:0:root:/root:/bin/bash"
+    line: "root:x:0:0:root:/root:/sbin/nologin"
+
 #Disabling cloud init for it has done its work
 - name: Ubuntu specific tasks
   block:
   - name: Remove cloud-config to avoid boot delay
     apt:
-      name: cloud-config
+      name: cloud-init, cloud-config
       state: absent
+
+#remove ubuntu user
+- name: Remove Users
+  user:
+    name: ubuntu
+    state: absent
+    remove: yes
   when: ansible_distribution == 'Ubuntu'
 
-# Standard stuff
-- name: Generate the locale
-  locale_gen:
-    name: "en_US.UTF-8"
-    state: present
+#yeet snap
+- name: remove snap stuff
+  import_tasks: remove_snap.yml
 
 - name: Update and upgrade apt packages
   shell:
     cmd: apt update && apt upgrade -y
 
-######Automatic Upgrades#######################
-- name: Install unattended upgrades package.
+#Install needed packages
+- name: Install needed packages
   package:
-    name: unattended-upgrades
+    name: "{{ packages }}"
     state: present
 
+######Automatic Upgrades#######################
 - name: Copy unattended-upgrades configuration files in place.
   template:
     src: "templates/unattended-upgrades/{{ item }}.j2"
@@ -78,27 +89,13 @@
   with_items:
     - 10periodic
     - 50unattended-upgrades
+
+- name: Ensure unattended upgrades is running
+  service:
+    name: unattended-upgrades
+    state: started
+    enabled: yes
 ################################################
-
-#remove ubuntu user
-- name: Remove Users
-  user:
-    name: ubuntu
-    state: absent
-    remove: yes
-  when: ansible_distribution == 'Ubuntu'
-
-#Extra packages
-- name: Install extra packages
-  package:
-    name: "{{ extra_packages }}"
-    state: present
-
-#yeet snap
-- name: remove snap stuff
-  import_tasks: remove_snap.yml
-
-###################
 #Didnt set hostname with FAI on old pc
 - name: Set a hostname
   ansible.builtin.hostname:

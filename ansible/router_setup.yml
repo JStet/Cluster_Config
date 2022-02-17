@@ -8,118 +8,56 @@
     - group_vars/main.yml
 
   tasks:
-#    - name: SSH juggle
-#      import_tasks: tasks/ssh-juggle.yml
-#    - name: Gathering facts
-#      setup:
-#
-#    - name: Initial Setup
-#      import_tasks: tasks/initial_setup.yml
-#
-#    - name: Install extra packages for router
-#      package:
-#        name: "{{ extra_packages_router }}"
-#        state: present
-#
-##################### Setting up interfaces ##################
-#
-#    - name: Renaming internal interface with a .link file (copying it to host)
-#      ansible.builtin.template:
-#        src: templates/interface_setup/10-intern0.link
-#        dest: /etc/systemd/network/10-intern0.link
-#
-#    - name: Renaming external interface with a .link file (copying it to host)
-#      ansible.builtin.template:
-#        src: templates/interface_setup/10-extern0.link
-#        dest: /etc/systemd/network/10-extern0.link
-#
-#    - name: Configuring internal interface by using netctl profiles (copying template to host)
-#      ansible.builtin.template:
-#        src: templates/interface_setup/intern0-profile
-#        dest: /etc/netctl/intern0-profile
-#
-#    - name: Configuring external interface by using netctl profiles (copying template to host)
-#      ansible.builtin.template:
-#        src: templates/interface_setup/extern0-profile
-#        dest: /etc/netctl/extern0-profile
-#
-#    - name: Enable the previously created network configs
-#      shell: |
-#       netctl enable extern0-profile
-#       netctl enable intern0-profile
-#
-#    - name: adding hosts to host file
-#      ansible.builtin.template:
-#        src: templates/hosts
-#        dest: /etc/hosts
-######################################################################
-#
-############################### DNS and DHCP #####################################
-#
-#    - name: Configuring dnsmasq as DNS Server and DHCP daemon (copying template to host)
-#      ansible.builtin.template:
-#        src: templates/dnsmasq.conf
-#        dest: /etc/dnsmasq.conf
-#
-#    - name: unblock port 53 (blocked by systemd-resolve) for dnsmasq, causes error otherwise
-#      ansible.builtin.systemd:
-#        name: systemd-resolved
-#        state: stopped
-#        enabled: false
-#
-#    - name: Ensure dnsmasq is running (also restart it) and enabled on boot.
-#      service:
-#        name: dnsmasq
-#        state: restarted
-#        enabled: yes
-#
-#    - name: Ensure systemdresolve is disabled
-#      service:
-#        name: systemd-resolved
-#        state: stopped
-#        enabled: no
-#
-######################################################################
-#
-############################ Routing and Firewall ##########################################
-#
-#    - name: Enable package forwarding (by modifying a systctl config file)
-#      ansible.builtin.template:
-#        src: templates/30-ipforward.conf
-#        dest: /etc/sysctl.d/30-ipforward.conf
-#
-#    - name: Replace firehol config
-#      copy:
-#        src: templates/firehol.conf
-#        dest: /etc/firehol/firehol.conf
-#
-#    - name: changing config to start firehol
-#      replace:
-#        path: /etc/default/firehol
-#        regexp:  "START_FIREHOL=NO"
-#        replace: "START_FIREHOL=YES"
-#        backup: yes
-#
-######################################################################
-#
-#    - name: Reboot host and wait for it to restart
-#      reboot:
-#        msg: "Reboot initiated by Ansible"
-#        connect_timeout: 5
-#        reboot_timeout: 600
-#        pre_reboot_delay: 0
-#        post_reboot_delay: 30
-#        test_command: whoami
-#
-#    - name: Disabling Wlan
-#      ansible.builtin.command: ifconfig wlan0 down
-############## Set up cluster control ############
+    - name: SSH juggle
+      import_tasks: tasks/ssh-juggle.yml
+    - name: Gathering facts
+      setup:
+
+    - name: Initial Setup
+      import_tasks: tasks/initial_setup.yml
+
+    - name: Install extra packages for router
+      package:
+        name: "{{ extra_packages_router }}"
+        state: present
+
+    - name: Setting up interfaces
+      import_tasks: tasks/router/setting_up_interfaces.yml
+
+    - name: Setting up DNS server and DHCP
+      import_tasks: tasks/router/DNS_DHCP.yml
+
+    - name: Setting up firewall and routing
+      import_tasks: tasks/router/routing_firewall.yml
+
+    - name: Setting up fail2ban and getting it to work with firehol
+      import_tasks: tasks/router/fail2ban_with_firehol.yml
+
+############# Set up cluster control ############
     - name: Copy power script to router
       copy:
         src: templates/python_scripts/power.py
         dest: /home/user/power.py
 
-######################################################################
+##################################################
+    - name: Disabling HDMI
+      cron:
+        name: "Disabling HDMI port"
+        special_time: reboot
+        job: "sleep 120s && /opt/vc/bin/tvservice -o"
+
+    - name: Disabling Raspberry Pis LEDS
+      copy:
+        src: templates/boot_config/config.txt
+        dest: /boot/firmware/config.txt
+
+    - name: Reboot
+      reboot:
+
+    - name: Disabling Wlan #will of course cut off connection if connected via WLAN
+      command: ifconfig wlan0 down
+
+
 
 
 

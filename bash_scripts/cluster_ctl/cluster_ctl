@@ -11,12 +11,12 @@ help()
 {
    # Display Help
    echo
-   echo "Syntax: $me [power] [additional arguments]"
+   echo "Syntax: $me [p] [additional arguments]"
    echo
    echo "options:"
    echo
    echo "Turn specified machines on or off with:"
-   echo "power [all/'machine1 machine2 ...']  [on/off]"
+   echo "p [all/'machine1 machine2 ...']  [on/off]"
    echo "Valid machines: [${valid_machines[@]}]. If you choose a selection of machines, use quotation marks."
    echo
    echo "This script requires local domains of the form machine.lan to be set up. It also needs passwordless sudo to be configured"

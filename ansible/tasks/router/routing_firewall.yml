@@ -1,0 +1,25 @@
+- name: Enable package forwarding (by modifying a systctl config file)
+  template:
+    src: templates/30-ipforward.conf
+    dest: /etc/sysctl.d/30-ipforward.conf
+
+- name: Replace firehol config
+  copy:
+    src: templates/firehol.conf
+    dest: /etc/firehol/firehol.conf
+
+- name: changing config to start firehol
+  replace:
+    path: /etc/default/firehol
+    regexp:  "START_FIREHOL=NO"
+    replace: "START_FIREHOL=YES"
+    backup: yes
+
+- name: Ensure firehol is running
+  service:
+    name: firehol
+    state: started
+    enabled: yes
+
+- name: Reboot host and wait for it to restart
+  reboot:

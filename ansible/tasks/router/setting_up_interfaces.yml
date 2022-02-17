@@ -1,0 +1,25 @@
+- name: Renaming internal interface with a .link file (copying it to host)
+  template:
+    src: templates/interface_setup/10-intern0.link
+    dest: /etc/systemd/network/10-intern0.link
+
+- name: Renaming external interface with a .link file (copying it to host)
+  template:
+    src: templates/interface_setup/10-extern0.link
+    dest: /etc/systemd/network/10-extern0.link
+
+- name: Configuring internal interface by using netctl profiles (copying template to host)
+  template:
+    src: templates/interface_setup/intern0-profile
+    dest: /etc/netctl/intern0-profile
+
+- name: Configuring external interface by using netctl profiles (copying template to host)
+  template:
+    src: templates/interface_setup/extern0-profile
+    dest: /etc/netctl/extern0-profile
+
+- name: Enable the previously created network configs
+  shell: |
+   netctl enable extern0-profile
+   netctl enable intern0-profile
+
